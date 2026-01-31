@@ -1,0 +1,4 @@
+= Agent Logs
+
+Put all logs of interactions with AI systems, like ChatCPT, Gemini into this directory. Date each interaction.
+Each file must be a UTF8 coded plain text file, which included files in Markdown, Asciidoc, or reStructuredText format.
