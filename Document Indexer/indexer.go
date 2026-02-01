@@ -62,12 +62,17 @@ func (se *SearchEngine) AddDocument(docID string, freq map[string]int, totalTerm
 }
 
 // IndexLookup returns the set of documents containing term.
-func (se *SearchEngine) IndexLookup(term string) DocumentIDs {
+// makes sure not to corrupt the index by returning a slice
+func (se *SearchEngine) IndexLookup(term string) []string {
 	set, ok := se.index[term]
 	if !ok {
-		return DocumentIDs{}
+		return nil
 	}
-	return set
+	out := make([]string, 0, len(set))
+	for doc := range set {
+		out = append(out, doc)
+	}
+	return out
 }
 
 // TermFrequency computes tf(t,d) = n_{t,d} / sum_{t' in d} n_{t',d}.
@@ -111,8 +116,11 @@ type relevanceResult struct {
 func (se *SearchEngine) RelevanceLookup(term string) []relevanceResult {
 	docs := se.IndexLookup(term)
 	out := make([]relevanceResult, 0, len(docs))
-	for docID := range docs {
-		out = append(out, relevanceResult{doc: docID, score: se.TfIdf(term, docID)})
+	for _, docID := range docs {
+		out = append(out, relevanceResult{
+			doc:   docID,
+			score: se.TfIdf(term, docID),
+		})
 	}
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].score == out[j].score {
@@ -199,24 +207,10 @@ func worker(jobs <-chan string, results chan<- mapResult) {
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
 func chooseWorkerCount(numFiles int) int {
 	// Limit file descriptors by limiting concurrent open files.
 	// Pick something "high enough" for parallelism but bounded.
-	// - runtime.NumCPU()*4 tends to keep CPU busy even with IO stalls.
+	// - runtime.NumCPU()*4 keep CPU busy even with IO stalls.
 	// - cap at 32 to avoid exhausting file descriptors on typical systems.
 	workers := runtime.NumCPU() * 4
 	workers = max(workers, 4)
