@@ -98,7 +98,9 @@ func (se *SearchEngine) InverseDocumentFrequency(term string) float64 {
 	if nt == 0 {
 		return 0
 	}
-	return math.Log(float64(N) / float64(nt))
+
+	// Add one in the denominator to closer match Marcel's relevance score
+	return math.Log(float64(N) / (float64(nt) + 1))
 }
 
 // TfIdf computes tf-idf(t,d,D) = tf(t,d) * idf(t,D).
