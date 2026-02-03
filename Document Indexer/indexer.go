@@ -102,7 +102,7 @@ func (se *SearchEngine) InverseDocumentFrequency(term string) float64 {
 }
 
 // TfIdf computes tf-idf(t,d,D) = tf(t,d) * idf(t,D).
-func (se *SearchEngine) TfIdf(term, docID string) float64 {
+func (se *SearchEngine) TfIdf(term string, docID string) float64 {
 	return se.TermFrequency(term, docID) * se.InverseDocumentFrequency(term)
 }
 
