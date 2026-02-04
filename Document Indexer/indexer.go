@@ -19,7 +19,6 @@ import (
 type DocumentIDs map[string]struct{}
 
 // SearchEngine is a stateful index over documents.
-//
 // Concurrency model: SearchEngine is NOT thread-safe by itself. This program
 // avoids data races by ensuring all mutations happen in a single reducer
 // goroutine (the main goroutine while building the index).
@@ -44,7 +43,6 @@ func NewSearchEngine() *SearchEngine {
 }
 
 // AddDocument adds (or replaces) a document in the engine.
-//
 // indexer.go: AddDocument is only called by the reducer goroutine.
 func (se *SearchEngine) AddDocument(docID string, freq map[string]int, totalTerms int) {
 	se.docs[docID] = struct{}{}
@@ -62,7 +60,7 @@ func (se *SearchEngine) AddDocument(docID string, freq map[string]int, totalTerm
 }
 
 // IndexLookup returns the set of documents containing term.
-// makes sure not to corrupt the index by returning a slice
+// It makes sure not to corrupt the index by returning a slice
 func (se *SearchEngine) IndexLookup(term string) []string {
 	set, ok := se.index[term]
 	if !ok {
@@ -143,6 +141,8 @@ type mapResult struct {
 
 // tokenizeRegex extracts "terms" from text. It keeps internal apostrophes,
 // e.g. o'er or o’er becomes one term. Unicode apostrophe (’) is supported.
+// There might be a slight different to Marcel's tokenizer, leading to slightly 
+// different TfIdf values, but this should be close enough.
 var tokenizeRegex = regexp.MustCompile(`[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*`)
 
 // mapFile reads a file and returns its word-frequency map and total term count.
@@ -157,7 +157,7 @@ func mapFile(path string) (map[string]int, int, error) {
 	total := 0
 
 	scanner := bufio.NewScanner(f)
-	// Some Shakespeare lines can be long; increase buffer to avoid token too long.
+	// Increase buffer for long lines.
 	scanner.Buffer(make([]byte, 64*1024), 1024*1024)
 
 	for scanner.Scan() {
